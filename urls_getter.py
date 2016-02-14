@@ -127,7 +127,28 @@ import re
 
 
 class UrlsGetter:
-    _urls = None
+    site = None
+    __urls = None
+    # scheme_pat = re.compile('[[a-z][0-9]\+\.\-]+:')
+    # {scheme} = ([a-z0-9\+\.\-]+:)
+    # start of {scheme_specific_part} = (//)
+    # username = non-unsafe characters:
+    # space_characters (\s, or	[ \f\n\r\t\v]), <, >, ", #, %, {, }, | , /, ^, ~, [, ], `
+    # % can encode other characters
+    # password = non-unsafe characters:
+    # user_pass_pat = '([^ \s\<\>\"\#\{\}\|\/\^\~\[\]\`]?:?([^ \s\<\>\"\#\{\}\|\/\^\~\[\]\`]?(@)?'
+    # host_pat
+    # [a-z0-9\-\.] - has the "." because domain name can include of "."
+    # last [a-z0-9\-] must not have "."
+    __scheme_pat = '([a-z0-9\+\.\-]+\:)?'
+    __specific_slash_pat = '(//)?'
+    __safe_char_pat = '[^\s\<\>\"\#\{\}\|\/\^\~\[\]\`\:\@\\\;\&]*'
+    __user_pass_pat = '('+__safe_char_pat+':?'+__safe_char_pat+'\@)?'
+    __host_pat = '([a-z0-9\-\.]+\.[a-z0-9\-]+)'
+    __port_pat = '(:[0-9]*)?'
+    # url-path can contain #, /, ~,
+    __url_path_pat = '(/[^\s\<\>\"\{\}\|\^\[\]\`\:\@\\\;\&]*)?'
+    __url_pat = __scheme_pat+__specific_slash_pat+__user_pass_pat+__host_pat+__port_pat+__url_path_pat
 
     def print_urls_str(self):
         """
@@ -136,12 +157,13 @@ class UrlsGetter:
         """
         # n = console_len = 80
         # n = console_len
-        # data = str(self._urls)
+        # data = str(self.__urls)
         # while n < data.__len__():
         #    print(data[(n-console_len):n])
         #     n += console_len
         # print(data[n-console_len:data.__len__()])
-        links = [''.join(part) for part in self._urls]
+        links = [''.join(part) for part in self.__urls]
+        # print(str(links))
         for link in links:
             print(str(link))
 
@@ -157,40 +179,27 @@ class UrlsGetter:
         #    print(data[(n-console_len):n])
         #    n += console_len
         # print(data[n-console_len:data.__len__()])
-        for link in self._urls:
+        for link in self.__urls:
             print(str(link))
 
-    def _get_urls(self, _content):
-        # scheme_pat = re.compile('[[a-z][0-9]\+\.\-]+:')
-        # {scheme} = ([a-z0-9\+\.\-]+:)
-        # start of {scheme_specific_part} = (//)
-        # username = non-unsafe characters:
-        # space_characters (\s, or	[ \f\n\r\t\v]), <, >, ", #, %, {, }, | , /, ^, ~, [, ], `
-        # % can encode other characters
-        # password = non-unsafe characters:
-        # user_pass_pat = '([^ \s\<\>\"\#\{\}\|\/\^\~\[\]\`]?:?([^ \s\<\>\"\#\{\}\|\/\^\~\[\]\`]?(@)?'
-        # host_pat
-        # [a-z0-9\-\.] - has the "." because domain name can include of "."
-        # last [a-z0-9\-] must not have "."
-        scheme_pat = '([a-z0-9\+\.\-]+\:)?'
-        specific_pat = '(//)?'
-        safe_char_pat = '[^ \s\<\>\"\#\{\}\|\/\^\~\[\]\`\:\@]*'
-        user_pass_pat = '('+safe_char_pat+':?'+safe_char_pat+'\@)?'
-        host_pat = '([a-z0-9\-\.]+\.[a-z0-9\-]+)'
-        url_pat = scheme_pat+specific_pat+user_pass_pat+host_pat
-        _content = str(_content)
-        _content = _content.lower()
-        self._urls = re.findall(url_pat, _content)
-        # return scheme
+    def get_urls_list(self):
+        """Return a list of strings which contain URLs"""
+        return [''.join(part) for part in self.__urls]
 
-    def __init__(self, _site="https://tools.ietf.org/html/rfc1738.html"):
+    def get_urls_tuples(self):
+        """Return a list of tuples which contain URLs"""
+        return self.__urls
+
+    def get_urls(self, site=None):
+        if not site:
+            raise AttributeError
+        content = self._get_content(site)
+        content = content.lower()
+        self.__urls = re.findall(self.__url_pat, content)
+
+    def _get_content(self, _site):
         r = requests.get(_site)
-        self._get_urls(str(r.content))
+        return str(r.content)
 
-# site = "https://tools.ietf.org/html/rfc1738.html"
-# site = "http://bash.im"
-# site = "https://ru.wikipedia.org/wiki/HTTPS"
-site = "http://formvalidation.io/validators/uri/"
-urls = UrlsGetter(site)
-# urls.print_urls_tuples()
-urls.print_urls_str()
+#    def __init__(self, _site="https://tools.ietf.org/html/rfc1738.html"):
+#        self.__site = _site
