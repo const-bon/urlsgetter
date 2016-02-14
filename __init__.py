@@ -3,7 +3,6 @@ import requests
 import threading
 import time
 import asyncio
-import asyncio
 import aiohttp
 
 # import gevent.monkey
@@ -15,11 +14,15 @@ def thread_builder(link):
 
 @asyncio.coroutine
 def check_async_url(link):
-    response = yield from aiohttp.request('GET', link)
-    print(response.status, link)
-    # assert response.status == 200
-    # content = yield from response.read()
-    # print('URL: {0}:  Content: {1}'.format(url, content))
+    #with aiohttp.Timeout(timeout):
+    try:
+        response = yield from aiohttp.request('GET', link)
+        print(response.status, link)
+        # assert response.status == 200
+        # content = yield from response.read()
+        # print('URL: {0}:  Content: {1}'.format(url, content))
+    except Exception as e:
+        pass
     print("Elapsed time: {:.3f} sec".format(time.time() - startTime))
 
 def check_url(link):
@@ -55,7 +58,7 @@ urls_list = urls.get_urls(site)
 print(urls.get_urls_tuples())
 print(len(urls.get_urls_tuples()))
 possible_schemas = ("http", "https")
-timeout = 1
+timeout = 10
 threads = []    #For async program
 for url in urls.get_urls_tuples():
     if len(url[0]) == 0:
