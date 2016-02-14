@@ -1,23 +1,21 @@
-import gevent
-import random
+import asyncio
+import aiohttp
 
-def task(pid):
-    """
-    Some non-deterministic task
-    """
-    gevent.sleep(random.randint(0,2)*0.001)
-    print('Task %s done' % pid)
+@asyncio.coroutine
+def fetch_page(url):
+    response = yield from aiohttp.request('GET', url)
+    assert response.status == 200
+    content = yield from response.read()
+    print('URL: {0}:  Content: {1}'.format(url, content))
 
-def synchronous():
-    for i in range(1,10):
-        task(i)
 
-def asynchronous():
-    threads = [gevent.spawn(task, i) for i in range(1, 10)]
-    gevent.joinall(threads)
+loop = asyncio.get_event_loop()
+tasks = [
+    fetch_page('http://google.com'),
+    fetch_page('http://cnn.com'),
+    fetch_page('http://twitter.com')]
+loop.run_until_complete(asyncio.wait(tasks))
+loop.close()
 
-print('Synchronous:')
-synchronous()
-
-print('Asynchronous:')
-asynchronous()
+for task in tasks:
+    print(task)

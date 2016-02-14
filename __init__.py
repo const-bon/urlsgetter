@@ -2,25 +2,40 @@ from urls_getter import UrlsGetter
 import requests
 import threading
 import time
-import gevent
+import asyncio
+import asyncio
+import aiohttp
+
+# import gevent.monkey
 
 
 def thread_builder(link):
     threading.Thread(target=check_url, args=(link,)).start()
 
+
+@asyncio.coroutine
+def check_async_url(link):
+    response = yield from aiohttp.request('GET', link)
+    print(response.status, link)
+    # assert response.status == 200
+    # content = yield from response.read()
+    # print('URL: {0}:  Content: {1}'.format(url, content))
+    print("Elapsed time: {:.3f} sec".format(time.time() - startTime))
+
 def check_url(link):
     try:
         r = requests.get(link, timeout=timeout)
         print(r.status_code, link)
-    except requests.exceptions.ConnectionError as e:
-        return 1
-        print("ERROR", link, e)
-    except requests.exceptions.ReadTimeout as e:
-        return 1
-        print("ERROR", link, e)
-    except requests.exceptions.InvalidSchema as e:
-        return 1
-        print("ERROR", link, e)
+        print("Elapsed time: {:.3f} sec".format(time.time() - startTime))
+    # except requests.exceptions.ConnectionError as e:
+    #     return 1
+    #     print("ERROR", link, e)
+    # except requests.exceptions.ReadTimeout as e:
+    #     return 1
+    #     print("ERROR", link, e)
+    # except requests.exceptions.InvalidSchema as e:
+    #     return 1
+    #     print("ERROR", link, e)
     except Exception as e:
         return 1
         print("ERROR", link, e)
@@ -63,6 +78,16 @@ for url in urls.get_urls_tuples():
 #         threads.append(gevent.spawn(check_url, link))
 #
 # gevent.joinall(threads)
+
+    """Asyncio"""
+    for link in url:
+        threads.append(check_async_url(link))
+
+print(threads)
+loop = asyncio.get_event_loop()
+loop.run_until_complete(asyncio.wait(threads))
+loop.close()
+
 
     # """Threaded program"""
     # for link in url:
